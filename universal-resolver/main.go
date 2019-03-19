@@ -15,8 +15,9 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.Handle(fmt.Sprintf("/%s/identifiers/ockam/", Version()), handleGetEntity())
 
-	log.Println("Listening on", "8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	port := os.Getenv("PORT")
+	log.Println(fmt.Sprintf("Listening on %s\n", port))
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), mux); err != nil {
 		return err
 	}
 
@@ -41,8 +42,7 @@ func handleGetEntity() http.Handler {
 			return
 		}
 
-		//Fetch Entity
-		fmt.Printf("Entity did: %s\n", id.String())
+		// Fetch Entity
 		bytes, _, err := ockamNode.FetchEntity(id.String())
 
 		if err != nil {
