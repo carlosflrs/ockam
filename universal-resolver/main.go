@@ -8,14 +8,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
+	"strings"
 )
 
 func run() error {
 	mux := http.NewServeMux()
-	mux.Handle("/hello/", handleHello())
 	mux.Handle(fmt.Sprintf("/%s/identifiers/ockam/", Version()), handleGetEntity())
-	mux.Handle(fmt.Sprintf("/%s/identifiers/ockam/{ockam}/claim/{claim}", Version()), handleGetClaim())
 
 	log.Println("Listening on", "8080")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
@@ -23,15 +21,6 @@ func run() error {
 	}
 
 	return nil
-}
-
-func handleHello() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("handleHello")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("hello"))
-	})
 }
 
 func handleGetEntity() http.Handler {
@@ -43,33 +32,26 @@ func handleGetEntity() http.Handler {
 	exitOnError(err)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ockamChain := ockamNode.Chain()
+		did_path := strings.Split(r.URL.Path, fmt.Sprintf("/%s/identifiers/ockam/", Version()))
 
-		// print some information about the chain
-		fmt.Printf("Chain ID: %s\n", ockamChain.ID())
-
-		regex, _ := regexp.Compile("did:ockam:[a-zA-Z0-9]*")
-
-		// Fetch Entity
-		id, err := did.Parse(regex.FindString(r.URL.Path))
+		id, err := did.Parse(did_path[1])
 		if err != nil {
-			exitOnError(err)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("Not Found"))
+			return
 		}
-		fmt.Printf("did: %s\n", id.String())
+
+		//Fetch Entity
+		fmt.Printf("Entity did: %s\n", id.String())
 		bytes, _, err := ockamNode.FetchEntity(id.String())
-		//bytes, _, err := ockamNode.FetchClaim(id.String())
 
 		if err != nil {
-			exitOnError(err)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("Not Found"))
+			return
 		}
 
 		respondWithJson(w, r, http.StatusOK, bytes)
-	})
-}
-
-func handleGetClaim() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
 	})
 }
 
