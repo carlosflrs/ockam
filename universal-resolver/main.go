@@ -8,14 +8,23 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
 func run() error {
 	mux := http.NewServeMux()
-	mux.Handle(fmt.Sprintf("/%s/identifiers/ockam/", Version()), handleGetEntity())
 
 	port := os.Getenv("PORT")
+	discoverer_name := os.Getenv("DISCOVERER_NAME")
+	discoverer_port, err := strconv.Atoi(os.Getenv("DISCOVERER_PORT"))
+
+	if err != nil {
+		exitOnError(err)
+	}
+
+	mux.Handle(fmt.Sprintf("/%s/identifiers/ockam/", Version()), handleGetEntity(discoverer_name, discoverer_port))
+
 	log.Println(fmt.Sprintf("Listening on %s\n", port))
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), mux); err != nil {
 		return err
@@ -24,9 +33,8 @@ func run() error {
 	return nil
 }
 
-func handleGetEntity() http.Handler {
-	// test.ockam.network needs to be replaced
-	ockamNode, err := node.New(node.PeerDiscoverer(ockamHttp.Discoverer("test.ockam.network", 26657)))
+func handleGetEntity(name string, port int) http.Handler {
+	ockamNode, err := node.New(node.PeerDiscoverer(ockamHttp.Discoverer(name, port)))
 	exitOnError(err)
 
 	err = ockamNode.Sync()
