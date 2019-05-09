@@ -1,9 +1,14 @@
-# Running
+# Universal Resolver Driver: did:ockam
 
-## build
+This is a [Universal Resolver](https://github.com/decentralized-identity/universal-resolver/) driver for **did:ockam** identifiers.
 
-`docker build -t resolver . --build-arg DISCOVERER_NAME="test.ockam.network" --build-arg DISCOVERER_PORT=26657`
+## Build and Run (Docker)
 
-## run
-`docker run -p 8080:8080 resolver --rm`
+```
+docker build -t ockam/resolver . \
+    --build-arg DISCOVERER_NAME="test.ockam.network" \
+    --build-arg DISCOVERER_PORT=26657
+docker run -p 8080:8080 ockam/resolver --rm
+```
+
 
